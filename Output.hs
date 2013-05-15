@@ -17,8 +17,8 @@ splitU k map = let (l,m,u) = M.splitLookup k map
 
 
 --
-tabStart :: Tab -> PTime
-tabStart = minimum . map ptStart . M.elems . snd . snd . M.findMin
+--tabStart :: Tab -> PTime
+--tabStart = minimum . map ptStart . M.elems . snd . snd . M.findMin
 
 tabLargerThan :: PTime -> Tab -> Bool
 tabLargerThan t tab = (not . M.null . snd . M.split t) tab ||
@@ -33,9 +33,9 @@ tabLargerThan t tab = (not . M.null . snd . M.split t) tab ||
 
 --Given the "bin width" (acc) of time for which each vertical line in the tab should
 --represent (the "resolution" of the tab) and the number
-asciiTab :: PTime -> PTime -> Tab -> [String]
-asciiTab acc meas tab = 
-	let start = tabStart tab
+asciiTab :: PTime -> Tab -> [String]
+asciiTab acc tab = 
+	let start = 0 --we'll just start at 0
             list t = if (tabLargerThan t tab) then t:(list (t+acc)) else []
             times = list start
 	    pairedtimes = zip times (tail times)
@@ -68,7 +68,7 @@ tabFor start end pcs = let try str (po,pi) = if (M.member str $ M.filter timefil
 --Formats tab, and splits it into lines, and adds measure bars.
 annotatedTab :: Int-> PTime -> PTime -> Tab -> [[String]]
 annotatedTab n acc meas tab = 
-	map (map (++"|")) $ chunks ((round(meas/acc)+1)*n) $ addInfo acc meas $ asciiTab acc meas tab
+	map (map (++"|")) $ chunks ((2*round(meas/acc)+1)*n) $ addInfo acc meas $ asciiTab acc tab
 
 
 --Breaks a list of lists into chunks of size n.
@@ -93,7 +93,7 @@ addStr s n i (c:str) = c:(addStr s n (i-1) str)
 
 --Add measure information to tablature output
 addInfo :: PTime -> PTime -> [String] -> [String]
-addInfo acc meas ls = let n = round (meas/acc) in 
+addInfo acc meas ls = let n = 2*round (meas/acc) in 
                    [addStr "|" n 0 l ++ "|" | l <- ls]
 
 
@@ -126,6 +126,10 @@ posInTab ls = M.elems $ M.map (asciiPos.tPos) ls
 --output all the positions in ASCII format
 tabPositions :: Tab -> IO ()
 tabPositions = lineByLine.posInTab
+
+--output the tab in ASCII format
+tabOutput :: Int -> PTime -> PTime -> Tab -> IO ()
+tabOutput n acc meas = lineByLine . annotatedTab n acc meas
 
 
 --Output a list of strings line by line, with line spaces in between

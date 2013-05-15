@@ -87,3 +87,4 @@ mcmcAll tab tun beta rand =
 mcmcBest :: Int -> [SAState] -> Tab
 mcmcBest n tabs = saTab $ maximumBy (comparing saScore) $ take n $ tabs
 
+

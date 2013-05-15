@@ -32,8 +32,23 @@ tuning = fromListAll
 --
 
 stdTuning = tuning [(E,3), (A,3), (D,4), (G,4), (B,4), (E,5)]
+halfStepDown = M.map (trans (-1)) stdTuning
+fullStepDown = M.map (trans (-2)) stdTuning
 dropDTuning = M.adjust (const (D,3)) S1 stdTuning
-imyoursTuning = M.adjust (const (G,3)) S2 dropDTuning
+doubleDropD = M.adjust (const (D,5)) S6 dropDTuning
+openG6Tuning = M.adjust (const (G,3)) S2 dropDTuning
 openCTuning = tuning [(C,3), (G,3), (C,4), (G,4), (C,5), (E,5)]
+dadgadTuning = tuning [(D,3), (A,3), (D,4), (G,4), (A,4), (D,5)]
 
+
+
+tuningStrings = 
+       [("Standard", stdTuning),
+        ("HalfStepDown", halfStepDown),
+        ("FullStepDown", fullStepDown),
+	("DropD", dropDTuning),
+	("DoubleDropD", doubleDropD),
+	("OpenG6", openG6Tuning),
+	("OpenC", openCTuning),
+	("DADGAD", dadgadTuning)]
 

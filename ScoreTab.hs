@@ -2,7 +2,7 @@ module ScoreTab where
 import Positions 
 import Tablature
 import PositionBank (allPositionsUnsorted)
-import Parameters (changeImportance)
+import Parameters (changeImportance, speedFunc)
 
 import Euterpea (PTime)
 import qualified Data.Map as M
@@ -190,21 +190,23 @@ slideVar pos1 pos2 = let vars = M.intersectionWith (-) (M.map getFret pos1) (M.m
 
 --Given a property of fingerings, and an old and a new position, returns how many times
 --a new fingering with that property is added.
-addProp :: (Fingering -> Bool) -> Position -> Position -> Int
-addProp f pos1 pos2 = let diffMap = M.differenceWith (\x y -> if x /= y then Just x else Nothing) pos2 pos1
-                      in M.size $ M.filter id $ M.intersectionWith (\_ y -> f y) diffMap pos2
+--addProp :: (Fingering -> Fingering -> Bool) -> Position -> Position -> Int
+--addProp f pos1 pos2 = let diffMap = M.differenceWith (\x y -> if x /= y then Just y else Nothing) pos2 pos1
+--                      in M.size $ M.filter id $ M.intersectionWith f diffMap pos2
 
---How many new fingers are made to press on the fretboard.
+--How many new fingers are made to press on the fretboard, not including slides
 addFingers :: Position -> Position -> Int
-addFingers = addProp (const True)
+addFingers pos1 pos2 = M.size $ M.differenceWith f pos2 pos1
+	where f y x = if isSlideFinger x y then Nothing else Just y
 
 --How many fingers are removed from the fretboard.
 removeFingers :: Position -> Position -> Int
 removeFingers = flip addFingers
 
---How many new bars are made.
+--How many new bars are made, not including slides.
 addBars :: Position -> Position -> Int
-addBars = addProp isBar
+addBars pos1 pos2 = M.size $ M.filter isBar $ M.differenceWith f pos2 pos1
+	where f y x = if isSlideFinger x y then Nothing else Just y
 
 --How many bars are removed.
 removeBars :: Position -> Position -> Int
@@ -219,7 +221,7 @@ removeBarsScore p1 p2 = (-1)*(select 50 [(0, 0), (1, 5), (2, 15)] $ removeBars p
 
 --Score that penalizes making the hand move too far up or down the fretboard.
 changeHandPositionScore :: Position -> Position -> Double
-changeHandPositionScore p1 p2 =(-1)*(fromMaybe 0 $ fmap abs $ liftA2 (-) (handPosition p1) (handPosition p2))
+changeHandPositionScore p1 p2 =(-3)*(fromMaybe 0 $ fmap abs $ liftA2 (-) (handPosition p1) (handPosition p2))
 
 changeFuncs = [addFingersScore, removeFingersScore, addBarsScore, removeBarsScore, changeHandPositionScore]
 
@@ -228,8 +230,3 @@ changeFuncs = [addFingersScore, removeFingersScore, addBarsScore, removeBarsScor
 --Higher scores are better, and the best score is 0
 changePosScore :: PTime -> Position -> Position -> Double
 changePosScore t p1 p2 = changeImportance*(speedFunc t)*scoreFuncs2 changeFuncs p1 p2
-
---speedFunc weighs changes that occur after shorter time intervals more heavily than after long intervals
-speedFunc :: Fractional a => PTime -> a
-speedFunc t = (1/4)/(fromRational t)
-
